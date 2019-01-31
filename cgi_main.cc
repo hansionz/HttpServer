@@ -13,7 +13,7 @@ void HttpResponse(const std::string& body)
 
 int main()
 {
-    // 1.先获取到method
+    // 1.先从环境变量中获取到method
     const char* method = getenv("REQUEST_METHOD");
     if(method == NULL)
     {
