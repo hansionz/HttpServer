@@ -5,9 +5,9 @@ using namespace http_server;
 
 int main(int argc,char* argv[])
 {
-    if(argc!=3)
+    if(argc != 3)
     {
-        std::cout<<"Usage ./server [ip] [port]"<<std::endl;
+        std::cout << "Usage:./server [ip] [port]" << std::endl;
         return 1;
     }
     HttpServer server;

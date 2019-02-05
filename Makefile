@@ -2,11 +2,10 @@
 all:httpserver cgi_main
 
 httpserver:http_server.cc http_server_main.cc 
-	g++ $^ -o $@ -std=c++11 -lpthread -lboost_filesystem -lboost_system
+	g++ $^ -o $@ -std=c++11 -lpthread 
 
 cgi_main:cgi_main.cc
-	g++ $^ -o $@ -std=c++11 -lpthread -lboost_filesystem -lboost_system
-	# cp cgi_main ./wwwroot/add
+	g++ $^ -o $@ -std=c++11 -lpthread 
 
 .PHONY:clean
 clean:
