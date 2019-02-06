@@ -5,9 +5,9 @@
 
 void HttpResponse(const std::string& body)
 {
-    std::cout<<"Content-Length:"<<body.size()<<"\n";
-    std::cout<<"\n";
-    std::cout<<body;
+    std::cout << "Content-Length:"<< body.size() <<"\n";
+    std::cout << "\n";//空行
+    std::cout << body;
     return ;
 }
 
@@ -15,7 +15,7 @@ int main(int argc,char* argv[],char* envp[])
 {
     //1.先获取到method
     const char* method = getenv("METHOD");
-    std::cerr<<"child METHOD:"<<method<<std::endl;
+    //std::cerr<<"child METHOD:"<<method<<std::endl;
     if(method == NULL)
     {
         HttpResponse("No env REQUEST_METHOD!");
@@ -24,18 +24,17 @@ int main(int argc,char* argv[],char* envp[])
     //2.如果是get请求，从QUERY_STRING读取请求参数
     //4.解析query_string或者body中数据
     StringUtil::UrlParam params;
-     if(std::string(method)=="GET")
-   // if(1)
+    if(std::string(method)=="GET")
     {
         const char* query_string = getenv("QUERY_STRING");
-        std::cerr<<"query_string:"<<query_string<<std::endl;
+        std::cerr << "query_string:" << query_string<<std::endl;
         StringUtil::ParseUrlParam(query_string,&params);
     }
     else if(std::string(method)=="POST")
     {
-    //3.如果是post请求，从CONTENT_LENGTH读取body的长度
-    //  根据body的长度，从标准输入中读取请求的body
-    //4.解析query_string或者body中数据
+        //3.如果是post请求，从CONTENT_LENGTH读取body的长度
+        //  根据body的长度，从标准输入中读取请求的body
+        //4.解析query_string或者body中数据
         char buf[1024*10] = {0};
         read(0,buf,sizeof(buf)-1);
         StringUtil::ParseUrlParam(buf,&params);

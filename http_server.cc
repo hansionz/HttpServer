@@ -77,7 +77,7 @@ void* HttpServer::ThreadEntry(void* arg)
     //reinterpret_cast指针转化为任意类型的指针,威力最为强大
     Context* context = reinterpret_cast<Context*>(arg);
     HttpServer* server = context->server;
-    //从文件描述符中读取数据,转换成Request对象
+    //从文件描述符中读取数据,反序列化成Request对象
     int ret = 0;
     ret = server->ReadOneRequest(context);
     if(ret < 0)
@@ -116,9 +116,9 @@ int HttpServer::Process404(Context* context)
                  "content=\"text/html;charset=utf-8\"></head><h1>404!您的页面被喵星人偷走啦!</h1>";
     //stringstream相当于C中的sscanf
     std::stringstream ss;
-    ss<<resp->body.size();
+    ss << resp->body.size();
     std::string size;
-    ss>>size;
+    ss >> size;
     resp->header["Content-Length"] = size;
     return 0;
 }
@@ -133,7 +133,7 @@ int HttpServer::ReadOneRequest(Context* context)
     std::string first_line;
     FileUtil::ReadLine(context->new_sock, &first_line);
     //2.解析首行,获取到请求的method和url
-    int ret = ParseFirstLine(first_line,&req->method,&req->url);
+    int ret = ParseFirstLine(first_line, &req->method, &req->url);
     if(ret < 0)
     {
         LOG(ERROR)<<"ParseFirstLine error! first_line"<<first_line<<"\n";
@@ -247,8 +247,6 @@ int HttpServer::ParseHeader(const std::string& header_line, Header* header)
 //该函数实现序列化，把Response对象转换成一个string
 //写回到socket中
 //此函数完全按照http协议的要求来构造响应数据
-//我们实现这个函数的细节可能有很大差异，但是只要能遵守http协议
-//那么就是ok的
 int HttpServer::WriteOneResponse(Context* context)
 {
     //1.进行序列化
@@ -263,9 +261,8 @@ int HttpServer::WriteOneResponse(Context* context)
         {
             ss << item.first <<": "<< item.second << "\n";
         }
-        ss << "\n";
+        ss << "\n";// 空行
         ss << resp.body;
-        
     }
     else
     {
@@ -283,7 +280,7 @@ int HttpServer::WriteOneResponse(Context* context)
 
 //通过输入的Request对象计算生成Response对象
 //1.静态文件
-// a)GET请求，没有query_string作为参数
+// a)GET请求,没有query_string作为参数
 //2.动态生成页面
 // a)GET请求存在query_string作为参数
 // b)POST请求 
@@ -309,8 +306,9 @@ int HttpServer::HandlerRequest(Context* context)
     }
     return -1;
 }
-//1.通过Request中的url_path字段，计算出文件在磁盘上的路径是什么
-//例如url_path/index.html，想要得到的磁盘上的文件就是 ./wwwroot/index.html
+
+//1.通过Request中的url_path字段,计算出文件在磁盘上的路径是什么
+//  例如url_path/index.html,想要得到的磁盘上的文件就是 ./wwwroot/index.html
 //2.打开文件，将文件中的所有内容读取出来放到body中
 int HttpServer::ProcessStaticFile(Context* context)
 {
@@ -332,18 +330,18 @@ int HttpServer::ProcessStaticFile(Context* context)
 
 //通过url_path找到对应的文件路径
 //例如请求url可能是http://192.268.2.2:9090/
-//这种情况下url_path是 \
-//此时等价于请求 /index.html
-//如果url_path指向的是一个目录，就尝试在这个目录下访问一个叫做index.html的文件
+//这种情况下url_path是 \ 此时等价于请求 /index.html
+//如果url_path指向的是一个目录,就尝试在这个目录下访问一个叫做index.html的文件
 void HttpServer::GetFilePath(const std::string& url_path,std::string* file_path)
 {
     *file_path = "./wwwroot" + url_path;
     //判定一个路径是普通文件还是目录文件
     //1.linux的stat函数,可以查看文件类型
     //2.通过boost filesystem模块来进行判定
-    if(FileUtil::IsDir(*file_path)/*如果当前文件是一个目录，就可以进行一个文件名拼接，拼接上index.html后缀*/)
+    //如果当前文件是一个目录，就可以进行一个文件名拼接，拼接上index.html后缀
+    if(FileUtil::IsDir(*file_path))
     {
-      //路径是个文件夹，默认返回文件夹下的index.html
+        //路径是个文件夹，默认返回文件夹下的index.html
         //1./image/
         //2./image
         if(file_path->back() != '/')
@@ -367,69 +365,64 @@ int HttpServer::ProcessCGI(Context* context)
     int child_read = fd1[0];
     int father_read = fd2[0];
     int child_write = fd2[1];
-    //2.设置环境变量
-    // a）METHOD请求方法
-
-
     pid_t ret = fork();
     if(ret < 0)
     {
         perror("fork");
         goto END;    
     }
-    if(ret>0)
+    if(ret > 0)
     {
-    //3.fork 父进程流程
+        //3.fork 父进程流程
         close(child_read);
         close(child_write);
-    // a）如果是POST请求，父进程就要把body写入到管道中
+        // a）如果是POST请求，父进程就要把body写入到管道中
         if(req.method == "POST")
         {
             write(father_write,req.body.c_str(),req.body.size());
         }
-    // b）阻塞式的读取管道，尝试把子进程的结果读取出来，
-    //    并且放到 Response对象中
-        FileUtil::ReadAll(father_read,&resp->cgi_resp);
-    // c）对子进程进行进程等待（为了避免僵尸进程）
+        // b）阻塞式的读取管道，尝试把子进程的结果读取出来，
+        //    并且放到 Response对象中
+        FileUtil::ReadAll(father_read, &resp->cgi_resp);
+        // c）对子进程进行进程等待（为了避免僵尸进程）
         wait(NULL);
     }
     else
     {
-
-    std::string env = "METHOD=" + req.method;
-    putenv(const_cast<char*>(env.c_str()));
-    std::cerr<<"env:"<<getenv("METHOD")<<std::endl;
-    if(req.method == "GET")
-    {
-        // b）QUERY_STRING请求参数
-        env = "QUERY_STRING=" + req.query_string;
-        putenv(const_cast<char*>(env.c_str()));
-    }
-    else if(req.method == "POST")
-    {
-        // c）POST方法，就设置CONTENT_LENGTH
-        auto pos = req.header.find("Content-Length");
-        env = "CONTENT_LENGTH=" + pos->second;
-        putenv(const_cast<char*>(env.c_str()));
-    }
-    //4.fork 子进程流程
-        close(father_read);
-        close(father_write);
-    // a）把标准输入输出进行重定向
+      //设置环境变量
+      std::string env = "METHOD=" + req.method;
+      putenv(const_cast<char*>(env.c_str()));
+      //std::cerr<<"env:"<<getenv("METHOD")<<std::endl;
+      if(req.method == "GET")
+      {
+          // b）QUERY_STRING请求参数
+          env = "QUERY_STRING=" + req.query_string;
+          putenv(const_cast<char*>(env.c_str()));
+      }
+      else if(req.method == "POST")
+      {
+          // c）POST方法，就设置CONTENT_LENGTH
+          auto pos = req.header.find("Content-Length");
+          env = "CONTENT_LENGTH=" + pos->second;
+          putenv(const_cast<char*>(env.c_str()));
+      }
+      //4.fork 子进程流程
+          close(father_read);
+          close(father_write);
+      // a）把标准输入输出进行重定向
           dup2(child_read,0);
           dup2(child_write,1);
-    // b）先获取到要替换的可执行文件是哪个（通过url_path来获取）
-        std::string file_path;
-        GetFilePath(req.url_path,&file_path);
-        //file_path = file_path + "cgi-bin";//加上一个执行后缀
-    // c）进行进程的程序替换
-        std::cerr << file_path << std::endl;
-        execl(file_path.c_str(),file_path.c_str(),NULL);
-    // d）有我们的CGI可执行程序完成动态页面的计算，并且写回数据到管道
-    //      这部分逻辑，我们需要放到另外单独的文件中实现，并且根据该文件
-    //      编译生成我们的CGI可执行程序
-        //执行到这里说明替换失败了
-        std::cerr<<"替换失败"<<std::endl;
+      // b）先获取到要替换的可执行文件是哪个（通过url_path来获取）
+          std::string file_path;
+          GetFilePath(req.url_path,&file_path);
+      // c）进行进程的程序替换
+          //std::cerr << file_path << std::endl;
+          execl(file_path.c_str(),file_path.c_str(),NULL);
+      // d）有我们的CGI可执行程序完成动态页面的计算，并且写回数据到管道
+      //      这部分逻辑，我们需要放到另外单独的文件中实现，并且根据该文件
+      //      编译生成我们的CGI可执行程序
+          //执行到这里说明替换失败了
+          //std::cerr<<"替换失败"<<std::endl;
     }
 END:
     //统一处理收尾工作

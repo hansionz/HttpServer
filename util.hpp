@@ -1,5 +1,4 @@
-//此源文件放置一些工具类
-//为了让这些工具用的方便,直接把声明和实现都放在.hpp中
+//此源文件实现一些工具类
 #pragma once
 #include <iostream>
 #include <sys/socket.h>
@@ -31,7 +30,6 @@ public:
         return 1000*1000*tv.tv_sec + tv.tv_usec;
     }
 };
-
 
 //枚举日志级别
 enum LogLevel{
@@ -111,13 +109,13 @@ public:
        return 0;
    }
 
-   static int ReadN(int fd,size_t len,std::string* output)
+   static int ReadN(int fd, size_t len, std::string* output)
    {
         output->clear();
         char c = '\0';
-        for(size_t i=0;i<len;i++)
+        for(size_t i = 0;i < len;i++)
         {
-            recv(fd,&c,1,0);
+            recv(fd, &c, 1, 0);
             output->push_back(c);
         }
         return 0;
@@ -128,7 +126,7 @@ public:
         while(true)
         {
             char buf[1024] = {0};
-            ssize_t read_size = read(fd,buf,sizeof(buf)-1);
+            ssize_t read_size = read(fd, buf, sizeof(buf)-1);
             if(read_size < 0)
             {
                 perror("read");
@@ -148,15 +146,16 @@ public:
    static bool IsDir(const std::string& file_path)
    {
       struct stat buf; 
-      int ret = stat(file_path.c_str(),&buf); 
+      int ret = stat(file_path.c_str(), &buf); 
       if( (buf.st_mode&__S_IFMT) == __S_IFDIR )
       {
         return true;
       }
       return false;
    }
+
    //从文件中读取全部内容到std::string中
-   static int ReadAll(const std::string& file_path,std::string* output)
+   static int ReadAll(const std::string& file_path, std::string* output)
    {
         std::ifstream file(file_path.c_str());
         if(!file.is_open())
@@ -186,46 +185,41 @@ class StringUtil
 {
 public:
     //把一个字符串，按照split_char进行切分，分成的n个子串，放到output数组中
-    //token_compress_on的含义是：例如分隔符是空格，字符串是“a","b”
-    //对于打开压缩情况，返回的子串就是有两个，“a”，“b”
-    //token_compress_off 对于关闭压缩的情况，返回的子串就是有三个，“a”，“”，“b”
     static int Split(const std::string& input,const std::string& split_char,std::vector<std::string>* output)
     {
         //boost::split(*output,input,boost::is_any_of(split_char),boost::token_compress_on);
         char buf[1024];
-        strcpy(buf,input.c_str());
+        strcpy(buf, input.c_str());
         int i=0;
         //字符串分割函数
-        char* tmp =strtok(buf,split_char.c_str());
-        if(tmp!=NULL)
-        output->push_back(tmp);
+        char* tmp =strtok(buf, split_char.c_str());
+        if(tmp != NULL)
+          output->push_back(tmp);
         while(1)
         {
           tmp = strtok(NULL,split_char.c_str());
-          //字符串分割完了
           if(tmp==NULL)
           {
             break;
           }
-            output->push_back(tmp);
+          output->push_back(tmp);
         }
         return 0;
     }
     
     typedef std::unordered_map<std::string,std::string> UrlParam;
-    static int ParseUrlParam(const std::string& input,UrlParam* output)
+    static int ParseUrlParam(const std::string& input, UrlParam* output)
     {
-        //1.先按照取地址符号切分成若干个kv
+        //1.先按照取地址符号切分成若干个k-v
         std::vector<std::string> params;
-        Split(input,"&",&params);
-        //2.在针对每一个kv，按照 = 切分，放到输出结果中
+        Split(input,"&", &params);
+        //2.在针对每一个k-v，按照 = 切分，放到输出结果中
         for(auto item : params)
         {
             std::vector<std::string> kv;
             Split(item,"=",&kv);
             if(kv.size() != 2)
             {
-                //说明参数非法
                 LOG(WARNING)<<"kv format error! item="<<item<<"\n";
                 continue;
             }
