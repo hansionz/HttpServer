@@ -47,7 +47,9 @@ int HttpServer::Start(const std::string& ip, short port)
 
     while(1)
     {
-        //基于多线程实现一个http服务器
+        // 基于多线程实现一个http服务器
+        // 为什么使用多线程？
+        // 因为线程比较轻量化,占用的资源较少(大量连接)
         sockaddr_in peer;
         socklen_t len = sizeof(peer);
         int new_sock = accept(listen_sock,(sockaddr*)&peer,&len);
@@ -106,7 +108,7 @@ END:
     return NULL;
 }
 
-//构造一个状态码为404的response对象
+// 构造一个状码为404的response对象
 int HttpServer::Process404(Context* context)
 {
     Response* resp = &context->resp;
@@ -268,7 +270,7 @@ int HttpServer::WriteOneResponse(Context* context)
     {
         //当前是在处理CGI生成的页面
         //cgi_resp同时把包含了响应数据的header空行和body
-        std::cout<<resp.cgi_resp<<std::endl;
+        std::cout<< resp.cgi_resp <<std::endl;
         ss << resp.cgi_resp;
     }
     //2.将序列化的结果写入到socket中
@@ -328,17 +330,17 @@ int HttpServer::ProcessStaticFile(Context* context)
     return 0;
 }
 
-//通过url_path找到对应的文件路径
-//例如请求url可能是http://192.268.2.2:9090/
-//这种情况下url_path是 \ 此时等价于请求 /index.html
-//如果url_path指向的是一个目录,就尝试在这个目录下访问一个叫做index.html的文件
+// 通过url_path找到对应的文件路径
+// 例如请求url可能是http://192.268.2.2:9090/
+// 这种情况下url_path是 \ 此时等价于请求 /index.html
+// 如果url_path指向的是一个目录,就尝试在这个目录下访问一个叫做index.html的文件
 void HttpServer::GetFilePath(const std::string& url_path,std::string* file_path)
 {
     *file_path = "./wwwroot" + url_path;
-    //判定一个路径是普通文件还是目录文件
-    //1.linux的stat函数,可以查看文件类型
-    //2.通过boost filesystem模块来进行判定
-    //如果当前文件是一个目录，就可以进行一个文件名拼接，拼接上index.html后缀
+    // 判定一个路径是普通文件还是目录文件
+    // 1.linux的stat函数,可以查看文件类型
+    // 2.通过boost filesystem模块来进行判定
+    // 如果当前文件是一个目录，就可以进行一个文件名拼接，拼接上index.html后缀
     if(FileUtil::IsDir(*file_path))
     {
         //路径是个文件夹，默认返回文件夹下的index.html
@@ -350,7 +352,7 @@ void HttpServer::GetFilePath(const std::string& url_path,std::string* file_path)
         }
         (*file_path) += "index.html";
     }
-    return ;
+    return;
 }
 
 int HttpServer::ProcessCGI(Context* context)
