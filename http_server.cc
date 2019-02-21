@@ -138,6 +138,7 @@ int HttpServer::ReadOneRequest(Context* context)
     //按行读取的分隔符是\n
     std::string first_line;
     FileUtil::ReadLine(context->new_sock, &first_line);
+    std::cerr << first_line << std::endl;
     //2.解析首行,获取到请求的 method 和 url
     int ret = ParseFirstLine(first_line, &req->method, &req->url);
     if(ret < 0)
@@ -211,6 +212,8 @@ int HttpServer::ParseFirstLine(const std::string& first_line, std::string* metho
     }
     *method = tokens[0];
     *url = tokens[1];
+
+    std::cerr << *url <<std::endl;
     return 0;
 }
 
@@ -228,6 +231,7 @@ int HttpServer::ParseUrl(const std::string& url, std::string* url_path, std::str
     }
     *url_path = url.substr(0,pos);
     *query_string = url.substr(pos+1);
+    std::cerr << *url_path << std::endl;
     return 0;
 }
 
@@ -350,6 +354,7 @@ int HttpServer::ProcessStaticFile(Context* context)
 void HttpServer::GetFilePath(const std::string& url_path, std::string* file_path)
 {
     *file_path = "./wwwroot" + url_path;
+    std::cerr << *file_path << std::endl;
 
     // 判定一个路径是普通文件还是目录文件
     // 1.linux的stat函数,可以查看文件类型
