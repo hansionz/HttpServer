@@ -27,7 +27,7 @@ int HttpServer::Start(const std::string& ip, short port)
     // 复用端口号
     // 当网络时延造成recv、send阻塞,可以使用setsockopt设置发送接收时间,从而避免阻塞
     int opt = 1;
-    setsockopt(listen_sock,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
+    setsockopt(listen_sock, SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
 
     sockaddr_in addr;
     addr.sin_family = AF_INET;
@@ -40,7 +40,7 @@ int HttpServer::Start(const std::string& ip, short port)
         return -1;
     }
 
-    ret  = listen(listen_sock,5);
+    ret  = listen(listen_sock, 5);
     if(ret < 0)
     {
         perror("listen");
